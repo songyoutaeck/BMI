@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세그멘테이션 마스크 결과</title>
+</head>
+<body>
+    <h1>세그멘테이션 마스크 결과</h1>
+    {% for mask_path in mask_paths %}
+        <div>
+            <h3>마스크 {{ loop.index }}</h3>
+            <img src="{{ url_for('static', filename='outputs/' + mask_path.split('/')[-1]) }}" alt="Mask Image">
+        </div>
+    {% endfor %}
+</body>
+</html>

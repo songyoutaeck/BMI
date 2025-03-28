@@ -1,0 +1,113 @@
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        color: #343a40;
+    }
+    header {
+        background-color: #0d0d0e;
+        color: white;
+        padding: 1.5rem 0;
+        text-align: center;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+        font-size: 2rem;
+        margin: 0;
+    }
+    main {
+        max-width: 1200px;
+        margin: 2rem auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+    }
+    .mask-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        justify-content: center;
+    }
+    .mask-item {
+        flex: 1 1 calc(30% - 2rem);
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        background-color: white;
+        box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .mask-item img {
+        max-width: 100%;
+        height: auto;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+    }
+    .mask-metrics {
+        font-size: 0.9rem;
+        text-align: left;
+    }
+    .mask-metrics p {
+        margin: 0.3rem 0;
+    }
+    footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: #f1f3f5;
+        font-size: 0.9rem;
+    }
+    .btn {
+        display: inline-block;
+        padding: 10px 15px;
+        font-size: 16px;
+        color: #fff;
+        background-color: #101111;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+    .btn:hover {
+        background-color: #50575f;
+    }
+</style>
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Selected Masks Analysis</h1>
+    </header>
+    <main> 
+
+        <h2>Analysis Results</h2>
+        <div class="mask-container">
+            {% for result in results %}
+                <div class="mask-item">
+                    <img src="{{ result.mask_path }}" alt="Selected Mask">
+                    <div class="mask-metrics">
+                        <p><strong>White Pixel Area Below Neck:</strong> {{ result.white_pixel_area_below_neck }}</p>
+                        <p><strong>White Pixel Area Below Hip:</strong> {{ result.white_pixel_area_below_hip }}</p>
+                        <p><strong>White Pixel Area Below Knee:</strong> {{ result.white_pixel_area_below_knee }}</p>
+                        <p><strong>White Pixel Area Between Waist and Hip:</strong> {{ result.white_pixel_area_between_wt }}</p>
+                        <p><strong>Total White Pixel Area:</strong> {{ result.total_white_pixel_area }}</p>
+                        <hr>
+                        <p><strong>White Pixel Ratio:</strong> {{ result.white_pixel_ratio|round(3) }}</p>
+                        <p><strong>White Neck Ratio:</strong> {{ result.white_neck_ratio|round(3) }}</p>
+                        <p><strong>White Hip Ratio:</strong> {{ result.white_hip_ratio|round(3) }}</p>
+                        <p><strong>White Knee Ratio:</strong> {{ result.white_knee_ratio|round(3) }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <a class="btn" href="/">Back to Upload</a>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Mask Analysis Tool. All rights reserved.</p>
+    </footer>
+</body>
+</html>

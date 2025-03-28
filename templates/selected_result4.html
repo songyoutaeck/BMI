@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selected Masks and Features</title>
+    <style>
+        /* Global styles */
+        body {
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #F8EDEB; /* 배경색 변경 */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header styles */
+        header {
+            text-align: center;
+            padding: 1rem;
+            background: #FFABAB; /* 헤더 배경색 변경 */
+            color: #fff;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: calc(50% - 50px);
+            width: 100px;
+            height: 20px;
+            background-color: #FFD700;
+            border-radius: 5px;
+            transform: rotate(-5deg);
+            z-index: -1;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        header p {
+            margin-top: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        /* Main content styles */
+        main {
+            padding: 1rem;
+            max-width: 800px;
+            margin: 1rem auto;
+            flex: 1;
+        }
+
+        .advice-section {
+            background: #FFFBEA; /* 섹션 배경색 변경 */
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            transform: rotate(-1.5deg); /* 살짝 기울임 */
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+            font-size: 1.1rem;
+        }
+
+        .advice-section::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            width: 60px;
+            height: 20px;
+            background-color: #FFD700; /* 테이프 효과 */
+            border-radius: 5px;
+            transform: rotate(-5deg);
+        }
+
+        .advice-section h2 {
+            color: #D97706;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .advice-section h3 {
+            margin-top: 0.5rem;
+            font-size: 1.5rem;
+            color: #9D174D;
+        }
+
+        .advice-section p {
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        .advice-section img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            color: #fff;
+            background-color: #FF6B6B; /* 버튼 색상 변경 */
+            text-decoration: none;
+            border-radius: 25px;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            background-color: #FF5252;
+        }
+
+        /* Footer styles */
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background: #FFABAB; /* 푸터 배경색 변경 */
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+        }
+
+        /* Font face */
+        @font-face {
+            font-family: 'GangwonEdu_OTFBoldA';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2/GangwonEdu_OTFBoldA.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Selected Masks and Features Processed</h1> 
+</header>
+<main>
+    <section class="advice-section">
+        <h2>💡 TIP!</h2>
+        <h3>그거 아셨나요❓❓ BMI 측정은 200년이 넘은 사실을!!</h3>
+        <p>
+            <img src="{{ url_for('static', filename='pel.jpg') }}" alt="Adolphe Quetelet">
+            <strong>1832년:</strong> Adolphe Quetelet라는 벨기에의 통계학자이자 사회학자가 BMI의 개념을 처음 제안했습니다. <br>
+            그는 신체의 크기와 체형의 규칙성을 연구하는 과정에서 <em>Quetelet Index</em>라는 이름으로 이를 정의했습니다.
+        </p>
+        <p>
+            <strong>공식:</strong> <code style="font-family: 'GangwonEdu_OTFBoldA', sans-serif;">BMI =  체중(kg) / ( 신장(m)²)</code><br>
+            하지만 저희는 2D 이미지를 통해 체중과 신장을 대신하는 특징들을 추출하여 BMI를 예측하였습니다!<br>
+            그럼 BMI 예측하러 가실까요~?
+        </p>
+        <div style="text-align: center; font-size: 2rem; margin-top: 0.5rem;">
+            👇👇👇
+        </div>
+        <div class="btn-container">
+            <form action="/predict_bmi" method="post">
+                <button type="submit" class="btn">BMI 예측하기</button>
+            </form>
+        </div>
+    </section>
+</main>
+<footer>
+    <p>&copy; SBL Lab</p>
+</footer>
+</body>
+</html>

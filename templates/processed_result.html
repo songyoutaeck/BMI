@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processed Result</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<style>
+body { 
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #BCAAA4; /* 배경색 설정 */
+            color: #333;
+        }
+
+        /* Header styles */
+        header {
+            text-align: center;
+            padding: 1rem;
+            background: #5f5552; /* 헤더 배경색 */
+            color: #fff; /* 헤더 텍스트 색상 */
+            font-family: 'Playfair Display', serif; /* 헤더 폰트 */
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 3.5rem;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+        }
+
+        header p {
+            margin-top: 0.5rem;
+            font-size: 1.2rem;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+        }
+
+</style>
+<body>
+    <header> <h1 class="text-center">Processed Result</h1></header>
+    <div class="container mt-5">
+         
+        
+        <!-- Cropped Image Display -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Cropped Image</h5>
+                <img src="{{ cropped_image }}" alt="Cropped Image" class="img-fluid">
+            </div>
+        </div>
+
+        <!-- Depth Image Display -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Depth Image</h5>
+                <img src="{{ depth_image }}" alt="Depth Image" class="img-fluid">
+            </div>
+        </div>
+
+        <!-- Keypoint Image Display -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Keypoint Visualization</h5>
+                <img src="{{ keypoint_image }}" alt="Keypoint Image" class="img-fluid">
+            </div>
+        </div>
+
+        <!-- Keypoints Coordinates -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Extracted Keypoints</h5>
+                <pre>{{ keypoints }}</pre>
+            </div>
+        </div>
+
+        <!-- Measurements Display -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Measurements</h5>
+                <ul>
+                    <li>Head Length: {{ measurements.Head_Length }}</li>
+                    <li>Hip Width: {{ measurements.Hip_Width }}</li>
+                    <li>Waist Width: {{ measurements.Waist_Width }}</li>
+                    <li>Height: {{ measurements.Height }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="/" class="btn btn-primary">Return to Home</a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

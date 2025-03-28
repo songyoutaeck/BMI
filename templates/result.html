@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Results</title>
+    <style> 
+
+        /* Header styles */
+        body {
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #FFFBEA; /* 메모지 느낌의 밝은 크림색 배경 */
+            color: #333;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+        }
+
+        header {
+            background-color: #FFABAB; /* 밝은 분홍색 */
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            border-bottom: 4px solid #FFD54F; /* 강조선 */
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 10px;
+            background-color: #FFD700; /* 테이프 느낌 */
+            border-radius: 5px;
+            transform: rotate(-3deg);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: #FFFBEA; /* 메모지 느낌의 크림색 */
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* 부드러운 그림자 */
+            border: 2px dashed #FFD54F; /* 점선 테두리 */
+        }
+
+        h2 {
+            color: #D97706; /* 따뜻한 주황색 */
+            font-size: 1.8rem;
+            text-align: center;
+            border-bottom: 2px dashed #FFD54F;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+
+        .flex-container .section {
+            flex: 1;
+            text-align: center;
+        }
+
+        .measurements ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .measurements ul li {
+            background: #FFFBEA; /* 크림색 */
+            margin: 0.5rem 0;
+            padding: 1rem;
+            border: 1px dashed #FFD54F; /* 점선 테두리 */
+            border-radius: 10px; /* 둥근 모서리 */
+            flex: 1 1 calc(30% - 1rem);
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 그림자 */
+        }
+
+        .measurements ul li span {
+            font-weight: bold;
+            color: #007BFF; /* 강조 파란색 */
+        }
+
+        .masks-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .masks-container img {
+            width: 150px;
+            height: auto;
+            border: 1px dashed #FFD54F; /* 점선 테두리 */
+            border-radius: 8px; /* 둥근 모서리 */
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1); /* 그림자 */
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .masks-container img:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2); /* 호버 시 그림자 */
+        }
+
+        @font-face {
+            font-family: 'GangwonEdu_OTFBoldA';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEdu_OTFBoldA.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Processing Results</h1>
+    </header>
+    <main>
+ 
+        <!-- Keypoint and Depth Image Sections (Side by Side) -->
+        <div class="flex-container">
+            <div class="section">
+                <h2>Cropped Image (YOLO)</h2>
+                <img src="{{ url_for('static', filename=cropped_image) }}" style="  width: 300px; height: auto;" alt="Cropped Image">
+            </div>
+            <div class="section">
+                <h2>Keypoint Visualization</h2>
+                <img src="{{ url_for('static', filename=keypoint_image) }}" style="  width: 300px; height: auto;" alt="Keypoint Visualization">
+            </div>
+            <div class="section">
+                <h2>Depth Image</h2>
+                <img src="{{ url_for('static', filename=depth_image) }}" style="  width: 300px; height: auto;" alt="Depth Image">
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 style="text-align: center;">SAM Masks</h2> <p style="text-align: center; font-family: 'GangwonEdu_OTFBoldA'; font-size: larger; " >"Please select the most correct option from the images below."</p> 
+            <form action="/select_masks" method="post" id="maskForm">
+                <div class="masks-container">
+                    {% for mask in masks %}
+                        <div class="mask-item">
+                            <!-- 이미지 클릭 시 폼이 자동 제출되도록 함 -->
+                            <a href="javascript:void(0);" onclick="submitForm('{{ mask }}');">
+                                <img src="{{ url_for('static', filename=mask) }}" alt="SAM Mask" style="width: 150px; height: auto;">
+                            </a>
+                            <!-- 숨겨진 checkbox로 마스크 선택 -->
+                            <input type="checkbox" name="selected_masks" value="{{ mask }}" style="display: none;">
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+        
+        <script>
+            // 이미지를 클릭하면 폼을 자동으로 제출하는 함수
+            function submitForm(mask) {
+                // 해당 mask에 대한 checkbox를 찾아서 체크하기
+                const checkbox = document.querySelector(`input[name="selected_masks"][value="${mask}"]`);
+                checkbox.checked = true; // 체크박스 선택
+        
+                // 폼 자동 제출
+                document.getElementById("maskForm").submit();
+            }
+        </script>
+        
+        
+        
+
+        <!-- Measurements Section -->
+        <div class="section measurements">
+            <h2>Body Measurements</h2>
+            <ul>
+                <li>Head Length: <span>{{ measurements.Head_Length|round(2) }}</span></li>
+                <li>Hip Width: <span>{{ measurements.Hip_Width|round(2) }}</span></li>
+                <li>Waist Width: <span>{{ measurements.Waist_Width|round(2) }}</span></li>
+                <li>Height: <span>{{ measurements.Height|round(2) }}</span></li>
+                <li>Head-Hip Ratio: <span>{{ measurements.Head_Hip_Ratio|round(2) if measurements.Head_Hip_Ratio else 'N/A' }}</span></li>
+                <li>Head-Waist Ratio: <span>{{ measurements.Head_Waist_Ratio|round(2) if measurements.Head_Waist_Ratio else 'N/A' }}</span></li>
+                <li>Head-Height Ratio: <span>{{ measurements.Head_Height_Ratio|round(2) if measurements.Head_Height_Ratio else 'N/A' }}</span></li>
+                <li>Hip-Waist Ratio: <span>{{ measurements.Hip_Waist_Ratio|round(2) if measurements.Hip_Waist_Ratio else 'N/A' }}</span></li>
+                <li>Hip-Height Ratio: <span>{{ measurements.Hip_Height_Ratio|round(2) if measurements.Hip_Height_Ratio else 'N/A' }}</span></li>
+                <li>Waist-Height Ratio: <span>{{ measurements.Waist_Height_Ratio|round(2) if measurements.Waist_Height_Ratio else 'N/A' }}</span></li>
+            </ul>
+        </div>
+
+        
+    </main>
+</body>
+</html>

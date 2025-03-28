@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 2rem;
+            margin: 0;
+        }
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        .section {
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+        .flex-container .section {
+            flex: 1;
+            text-align: center;
+        }
+        .measurements ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .measurements ul li {
+            background: #f8f9fa;
+            margin: 0.5rem 0;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            flex: 1 1 calc(30% - 1rem);
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .measurements ul li span {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .masks-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .masks-container img {
+            width: 150px;
+            height: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .masks-container img:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+        }  
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Processing Results</h1>
+    </header>
+    <main>
+        <!-- YOLO Cropped Image Section -->
+        <div class="section">
+            <h2>Cropped Image (YOLO)</h2>
+            <img src="{{ url_for('static', filename=cropped_image) }}" style="  width: 300px; height: auto;" alt="Cropped Image">
+        </div>
+
+        <!-- Keypoint and Depth Image Sections (Side by Side) -->
+        <div class="flex-container">
+            <div class="section">
+                <h2>Keypoint Visualization</h2>
+                <img src="{{ url_for('static', filename=keypoint_image) }}" style="  width: 300px; height: auto;" alt="Keypoint Visualization">
+            </div>
+            <div class="section">
+                <h2>Depth Image</h2>
+                <img src="{{ url_for('static', filename=depth_image) }}" style="  width: 300px; height: auto;" alt="Depth Image">
+            </div>
+        </div>
+
+        <!-- SAM Masks Section -->
+        <div class="section">
+            <h2>SAM Masks</h2>
+            <form action="/select_masks" method="post">
+                <div class="masks-container">
+                    {% for mask in masks %}
+                        <div>
+                            <img src="{{ url_for('static', filename=mask) }}" alt="SAM Mask" style="width: 150px; height: auto;">
+                            <label>
+                                <input type="checkbox" name="selected_masks" value="{{ mask }}">
+                                Select this mask
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit">Process Selected Masks</button>
+            </form>
+        </div>
+
+        <!-- Measurements Section -->
+        <div class="section measurements">
+            <h2>Body Measurements</h2>
+            <ul>
+                {% for key, value in measurements.items() %}
+                <li>{{ key }}: <span>{{ value|round(2) if value is not none else 'N/A' }}</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Keypoint Coordinates Section -->
+        <div class="section measurements">
+            <h2>Keypoint Coordinates</h2>
+            <ul>
+                {% for key, coord in keypoint_positions.items() %}
+                <li>{{ key }}: <span>({{ coord[0]|round(2) if coord else 'N/A' }}, {{ coord[1]|round(2) if coord else 'N/A' }})</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </main>
+</body>
+</html>

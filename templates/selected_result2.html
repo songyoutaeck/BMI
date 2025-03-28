@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+        header {
+            background-color: #090a0a;
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 2rem;
+            margin: 0;
+        }
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+        }
+ 
+        h2 {
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        } 
+        .measurements ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .measurements ul li {
+            background: #f8f9fa;
+            margin: 0.5rem 0;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            flex: 1 1 calc(30% - 1rem);
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .measurements ul li span {
+            font-weight: bold;
+            color: #007bff;
+        }
+ 
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Processing Results</h1>
+    </header>
+    <main> 
+
+        <!-- Measurements Section -->
+        <div class="section measurements">
+            <h2>Body Measurements</h2>
+            <ul>
+                <li>Head Length: <span>{{ measurements.Head_Length|round(2) }}</span></li>
+                <li>Hip Width: <span>{{ measurements.Hip_Width|round(2) }}</span></li>
+                <li>Waist Width: <span>{{ measurements.Waist_Width|round(2) }}</span></li>
+                <li>Height: <span>{{ measurements.Height|round(2) }}</span></li>
+                <li>Head-Hip Ratio: <span>{{ measurements.Head_Hip_Ratio|round(2) if measurements.Head_Hip_Ratio else 'N/A' }}</span></li>
+                <li>Head-Waist Ratio: <span>{{ measurements.Head_Waist_Ratio|round(2) if measurements.Head_Waist_Ratio else 'N/A' }}</span></li>
+                <li>Head-Height Ratio: <span>{{ measurements.Head_Height_Ratio|round(2) if measurements.Head_Height_Ratio else 'N/A' }}</span></li>
+                <li>Hip-Waist Ratio: <span>{{ measurements.Hip_Waist_Ratio|round(2) if measurements.Hip_Waist_Ratio else 'N/A' }}</span></li>
+                <li>Hip-Height Ratio: <span>{{ measurements.Hip_Height_Ratio|round(2) if measurements.Hip_Height_Ratio else 'N/A' }}</span></li>
+                <li>Waist-Height Ratio: <span>{{ measurements.Waist_Height_Ratio|round(2) if measurements.Waist_Height_Ratio else 'N/A' }}</span></li>
+            </ul>
+        </div>
+    </main>
+</body>
+</html>

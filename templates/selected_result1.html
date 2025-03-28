@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selected Mask Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Selected Masks and Images</h1>
+
+    <div class="section">
+        <h2>Selected Masks</h2>
+        {% for result in results %}
+            <img src="{{ result['mask_path'] }}" alt="Selected Mask">
+        {% endfor %}
+    </div>
+
+    <div class="section">
+        <h2>Feature Extraction</h2>
+        <form action="/extract_features" method="post">
+            <input type="hidden" name="selected_masks" value="{{ results|tojson }}">
+            <button type="submit" class="btn">Extract Features</button>
+        </form>
+    </div>
+</body>
+</html>

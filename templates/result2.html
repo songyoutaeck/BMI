@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Results</title>
+</head>
+<body>
+    <h1>Processing Results</h1>
+
+    <h2>Cropped Image</h2>
+    <img src="{{ cropped_image }}" alt="Cropped Image" style="max-width: 500px;">
+
+    <h2>Depth Image</h2>
+    <img src="{{ depth_image }}" alt="Depth Image" style="max-width: 500px;">
+
+    <h2>Generated Masks</h2>
+    <form action="/select_masks" method="post">
+        {% for mask in masks %}
+            <div>
+                <input type="checkbox" name="selected_masks" value="{{ mask }}">
+                <img src="{{ mask }}" alt="Mask" style="max-width: 200px;">
+            </div>
+        {% endfor %}
+        <button type="submit">Submit Selected Masks</button>
+    </form>
+</body>
+</html>
