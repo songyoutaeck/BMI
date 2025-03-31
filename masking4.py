@@ -37,22 +37,31 @@ detection_model = YOLO('/home/yutaek/yutaek/yolov8x-pose-p6.pt')  # Detection �
 pose_model = YOLO('/home/yutaek/yutaek/yolov8_pose_modify.pt')  # Pose 모델
 depth_pipeline = pipeline(task="depth-estimation", model="LiheYoung/depth-anything-large-hf", device=0)
 
+
 # SAM 모델 로드
 CHECKPOINT_PATH = "/home/yutaek/yutaek/segment-anything/sam_vit_h_4b8939.pth"
 MODEL_TYPE = "vit_h"
 sam = sam_model_registry[MODEL_TYPE](checkpoint=CHECKPOINT_PATH)
 sam.to(device)
 mask_generator = SamAutomaticMaskGenerator(sam)
-hgb_model_path = "/home/yutaek/yutaek/hgb_model.pkl"
-lgbm_model_path = "/home/yutaek/yutaek/lgbm_model.pkl"
-catboost_model_path = "/home/yutaek/yutaek/catboost_model.pkl"
 
 
+xgb_model_path = "/home/yutaek/yutaek/optimized_xgb_model.pkl"
+lgbm_model_path = "/home/yutaek/yutaek/optimized_lgbm_model.pkl"
+bayseian_model_path = "/home/yutaek/yutaek/optimized_bayesianridge_model.pkl"
+gradient_model_path = "/home/yutaek/yutaek/gradient_boosting_model.pkl"
 
-hgb_model = joblib.load(hgb_model_path)
+KEYPOINT_JSON_PATH = os.path.join(OUTPUT_FOLDER, "keypoints.json")
+
+import cloudpickle
+
+gradient_model_path = "/home/yutaek/yutaek/gradient_boosting_model.pkl"
+
+
+xgb_model = joblib.load(xgb_model_path)
 lgbm_model = joblib.load(lgbm_model_path)
-catboost_model = joblib.load(catboost_model_path)
-
+bayesian_model = joblib.load(bayseian_model_path)
+gradient_model = joblib.load(gradient_model_path)
 
 class Identity(nn.Module):
     def forward(self, x):
@@ -93,7 +102,8 @@ def process_image():
 
     # CSV 저장 경로 설정
     output_csv = os.path.join(OUTPUT_FOLDER, "measurements.csv")
-    measurements, keypoint_image_path  = extract_keypoints_and_measurements(cropped_path, output_csv)
+    output_json_path = os.path.join(OUTPUT_FOLDER, "keypoints.json")
+    measurements, keypoint_image_path  = extract_keypoints_and_measurements(cropped_path, output_csv, output_json_path)
  
  
 
@@ -188,7 +198,13 @@ def process_image():
         
     )
 
-
+def extract_original_name_from_mask(mask_filename):
+    # 예: 'selected_mask_depth_cropped_26.32_0.png'
+    parts = mask_filename.replace('selected_mask_', '').split('_')
+    if 'depth' in parts:
+        parts.remove('depth')
+    parts = parts[:-1]  # 마지막 인덱스 제거
+    return '_'.join(parts) + ".png"  # or .jpg if applicable
 
 @app.route("/select_masks", methods=["POST"])
 def select_masks():
@@ -213,41 +229,93 @@ def select_masks():
     last_depth_key = list(depth_data.keys())[-1] if depth_data else None
     last_depth_path = depth_data.get(last_depth_key) if last_depth_key else None
 
+    # 키포인트 JSON 로드
+    with open(KEYPOINT_JSON_PATH, 'r') as f:
+        keypoint_data = json.load(f)
+
+    filename_to_keypoints = {
+    keypoint_data["image_name"]: keypoint_data["keypoints"]
+}
+
+    def get_keypoint_y(keypoints_dict, label):
+        if label in keypoints_dict:
+            return int(keypoints_dict[label]["y"])
+        return None
+
     results = []
     csv_data = []
+
     for mask_path in selected_masks:
         mask_full_path = os.path.join(OUTPUT_FOLDER, os.path.basename(mask_path))
         if os.path.exists(mask_full_path):
             # 선택된 마스크 저장
-            selected_image_path = os.path.join(selected_images_folder, f"selected_{os.path.basename(mask_path)}")
+            selected_image_path = os.path.join(selected_images_folder, os.path.basename(mask_path))  # ✅ 'selected_' 안 붙임
             Image.open(mask_full_path).save(selected_image_path)
 
             # Depth Image Path 설정
-            depth_img_path = last_depth_path  # Always use the last saved depth path
+            depth_img_path = last_depth_path
 
             if not depth_img_path or not os.path.exists(depth_img_path):
                 print(f"[ERROR] Depth image not found for {mask_full_path}. Skipping this mask.")
-                depth_img_path = None  # 없는 경우 None으로 설정
+                depth_img_path = None
+
+            mask_filename = os.path.basename(mask_path)
+            mask_map_path = os.path.join(OUTPUT_FOLDER, "mask_to_original.json")
+            with open(mask_map_path, 'r') as f:
+                mask_to_original = json.load(f)
+
+            original_image_name = mask_to_original.get(mask_filename)
+
+# 아래 추가! depth_ prefix 제거
+            if original_image_name and original_image_name.startswith("depth_"):
+                original_image_name = original_image_name[len("depth_"):]  # depth_만 제거
+
+            keypoints = filename_to_keypoints.get(original_image_name)
+            if keypoints is None:
+                print(f"[WARNING] No keypoints found for {original_image_name}")
+                continue
 
 
-            img_mask = np.array(Image.open(mask_full_path).convert('L'))  # Load mask as grayscale
-            y_neck, y_hip, y_knee, y_waist = 50, 150, 250, 100  # Example y-coordinates
+            # Load mask image
+            img_mask = np.array(Image.open(mask_full_path).convert('L'))
 
-            white_pixel_area_below_neck = compute_white_pixel_area(img_mask, y_neck, img_mask.shape[0]) if y_neck is not None else 0
-            white_pixel_area_below_hip = compute_white_pixel_area(img_mask, y_hip, img_mask.shape[0]) if y_hip is not None else 0
-            white_pixel_area_below_knee = compute_white_pixel_area(img_mask, y_knee, img_mask.shape[0]) if y_knee is not None else 0
-            white_pixel_area_between_wt = compute_white_pixel_area(img_mask, y_waist, y_hip) if y_waist is not None and y_hip is not None else 0
+            y_neck = get_keypoint_y(keypoints, "Neck")
+            y_hip_r = get_keypoint_y(keypoints, "Right_hipline")
+            y_hip_l = get_keypoint_y(keypoints, "Left_hipline")
+            y_hip = int((y_hip_r + y_hip_l) / 2) if y_hip_r and y_hip_l else y_hip_r or y_hip_l
+
+            y_knee_r = get_keypoint_y(keypoints, "Right_knee")
+            y_knee_l = get_keypoint_y(keypoints, "Left_knee")
+            y_knee = int((y_knee_r + y_knee_l) / 2) if y_knee_r and y_knee_l else y_knee_r or y_knee_l
+
+            y_waist_r = get_keypoint_y(keypoints, "Right_waist")
+            y_waist_l = get_keypoint_y(keypoints, "Left_waist")
+            y_waist = int((y_waist_r + y_waist_l) / 2) if y_waist_r and y_waist_l else y_waist_r or y_waist_l
+
+            def compute_white_pixel_area(img, y_start, y_end=None):
+                if y_start is None:
+                    return 0
+                if y_end is None:
+                    return np.sum(img[y_start:, :] == 255)
+                return np.sum(img[y_start:y_end, :] == 255)
+
+            white_pixel_area_below_neck = compute_white_pixel_area(img_mask, y_neck)
+            white_pixel_area_below_hip = compute_white_pixel_area(img_mask, y_hip)
+            white_pixel_area_below_knee = compute_white_pixel_area(img_mask, y_knee)
+            white_pixel_area_between_wt = compute_white_pixel_area(img_mask, y_waist, y_hip) if y_waist and y_hip and y_hip > y_waist else 0
             total_white_pixel_area = compute_white_pixel_area(img_mask, 0, img_mask.shape[0])
 
             white_pixel_ratio = white_pixel_area_between_wt / total_white_pixel_area if total_white_pixel_area > 0 else 0
             white_neck_ratio = white_pixel_area_below_neck / total_white_pixel_area if total_white_pixel_area > 0 else 0
             white_hip_ratio = white_pixel_area_below_hip / total_white_pixel_area if total_white_pixel_area > 0 else 0
             white_knee_ratio = white_pixel_area_below_knee / total_white_pixel_area if total_white_pixel_area > 0 else 0
+            waist_to_hip_ratio = white_pixel_area_between_wt / white_pixel_area_below_hip if white_pixel_area_below_hip > 0 else 0
+
 
             results.append({
                 'mask_path': mask_full_path,
                 'selected_image_path': selected_image_path,
-                'depth_img_path': depth_img_path,  # 수정: 항상 포함되도록 함
+                'depth_img_path': depth_img_path,
                 'white_pixel_area_below_neck': white_pixel_area_below_neck,
                 'white_pixel_area_below_hip': white_pixel_area_below_hip,
                 'white_pixel_area_below_knee': white_pixel_area_below_knee,
@@ -256,14 +324,15 @@ def select_masks():
                 'white_pixel_ratio': white_pixel_ratio,
                 'white_neck_ratio': white_neck_ratio,
                 'white_hip_ratio': white_hip_ratio,
-                'white_knee_ratio': white_knee_ratio
-            })
+                'white_knee_ratio': white_knee_ratio,
+                'waist_to_hip_ratio': waist_to_hip_ratio
 
-            # CSV 데이터 추가
+            })
+            
             csv_data.append({
                 'Mask Path': mask_full_path,
                 'Selected Image Path': selected_image_path,
-                'Depth Image Path': depth_img_path if depth_img_path else "Not Found",  # None일 경우 처리
+                'Depth Image Path': depth_img_path if depth_img_path else "Not Found",
                 'White Pixel Area Below Neck': white_pixel_area_below_neck,
                 'White Pixel Area Below Hip': white_pixel_area_below_hip,
                 'White Pixel Area Below Knee': white_pixel_area_below_knee,
@@ -272,7 +341,9 @@ def select_masks():
                 'White Pixel Ratio': white_pixel_ratio,
                 'White Neck Ratio': white_neck_ratio,
                 'White Hip Ratio': white_hip_ratio,
-                'White Knee Ratio': white_knee_ratio
+                'White Knee Ratio': white_knee_ratio,
+                'Waist To Hip Ratio': waist_to_hip_ratio
+
             })
 
     # Save to CSV
@@ -281,7 +352,7 @@ def select_masks():
     df.to_csv(csv_path, index=False)
 
     # 모델 로드
-    model_path = "/home/yutaek/yutaek/best_model_epoch_36_val_loss_1.4145.pth"
+    model_path = "/home/yutaek/yutaek/best_model_epoch_28_val_loss_0.8256.pth"
     model = CustomEfficientNetB7(num_classes=1).to(device)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -343,13 +414,14 @@ def select_masks():
             row.get('white_neck_ratio', 0),
             row.get('white_hip_ratio', 0),
             row.get('white_knee_ratio', 0),
+            row.get('waist_to_hip_ratio', 0)
         ]
 
         # Combine features
         combined_features = np.concatenate((features_np, additional_features))
 
         # Save combined features in a new CSV with one feature per column
-        combined_features_csv_path = os.path.join(OUTPUT_FOLDER, "combined_features_2570.csv")
+        combined_features_csv_path = os.path.join(OUTPUT_FOLDER, "combined_features_2571.csv")
 
         # Convert combined features to DataFrame and save to CSV
         combined_features_df = pd.DataFrame([combined_features])
@@ -374,7 +446,7 @@ def predict_bmi():
 
     start_time = time.time()
     # Load combined features CSV
-    combined_features_csv_path = os.path.join(OUTPUT_FOLDER, "combined_features_2570.csv")
+    combined_features_csv_path = os.path.join(OUTPUT_FOLDER, "combined_features_2571.csv")
     if not os.path.exists(combined_features_csv_path):
         return "Feature data not found. Please process an image first.", 400
 
@@ -391,17 +463,30 @@ def predict_bmi():
  
 
     # Predict BMI using each model
-    hgb_pred = hgb_model.predict(features)[0]
+    xgb_pred = xgb_model.predict(features)[0]
     lgbm_pred = lgbm_model.predict(features)[0]
-    catboost_pred = catboost_model.predict(features)[0]
+    bayesian_pred = bayesian_model.predict(features)[0]
+    gradient_pred = gradient_model.predict(features)[0]
 
         # 모델 로딩 확인 로그
-    print("Model Loaded (HGB):", hgb_model)
+    print("Model Loaded (XGB):", xgb_model)
     print("Model Loaded (LGBM):", lgbm_model)
-    print("Model Loaded (CatBoost):", catboost_model)
- 
+    print("Model Loaded (BayesianRidge):", bayesian_model)
+    print("Model Loaded (GradientBoosting):", gradient_model)
     # Ensemble prediction (average)
-    ensemble_pred = (hgb_pred + lgbm_pred + catboost_pred) / 3
+    weights = {
+    'GradientBoosting': 0.32498039218353436,
+    'BayesianRidge': 0.2689367199305432,
+    'LGBM': 0.1582306675982903,
+    'XGB': 0.24785222028763207
+}
+
+    ensemble_pred = (
+    gradient_pred * weights['GradientBoosting'] +
+    bayesian_pred * weights['BayesianRidge'] +
+    lgbm_pred * weights['LGBM'] +
+    xgb_pred * weights['XGB']
+)
     output_csv = os.path.join(OUTPUT_FOLDER, "measurements.csv")
     measurements = {}
     if os.path.exists(output_csv):
@@ -413,9 +498,9 @@ def predict_bmi():
     print(f"Features CSV 경로: {combined_features_csv_path}")
     print(f"CSV 내용 미리보기: {combined_features_df.head()}")
     print(f"불러온 특성 미리보기: {combined_features_df.head()}")
-    print(f"HGB 예측: {hgb_pred}")
-    print(f"LGBM 예측: {lgbm_pred}")
-    print(f"CatBoost 예측: {catboost_pred}")
+    print(f"XGB 예측: {xgb_pred}")
+    print(f"bayesian 예측: {lgbm_pred}")
+    print(f"CatBoost 예측: {bayesian_pred}")
     print(f"앙상블 예측 (BMI): {ensemble_pred}") 
     print("예측 입력 데이터:", features)
 
@@ -457,9 +542,9 @@ def predict_bmi():
       
     return render_template(
         "bmi_prediction_result.html",
-        hgb_pred=hgb_pred,
+        hgb_pred=xgb_pred,
         lgbm_pred=lgbm_pred,
-        catboost_pred=catboost_pred,
+        catboost_pred=bayesian_pred,
         ensemble_pred=ensemble_pred,
         measurements=measurements,
         pointer_position = pointer_position,
@@ -515,67 +600,57 @@ def crop_person(image_path):
         return cropped_path
     return image_path
 
-def extract_keypoints_and_measurements(image_path, output_csv):
-    """Extract keypoints, calculate body measurements, and save results to a CSV."""
+def extract_keypoints_and_measurements(image_path, output_csv, output_json_path=None):
+    """Extract keypoints, calculate body measurements, and save results to a CSV and optionally a JSON."""
     import os
     import math
     import pandas as pd
-
+    import json
 
     # Perform pose estimation
     results = pose_model(image_path, task="pose")
     keypoints = results[0].keypoints.xy[0].cpu().numpy()
 
-    # Define keypoint indices
-    indices = {
-        "head_length": (3, 4),  # Right ear and Left ear
-        "hip_width": (18, 19),  # Right hipline and Left hipline
-        "waist_width": (14, 13),  # Right waist and Left waist
-        "height": (0, 20, 21)  # Nose and both knees
-    }
+    keypoint_labels = [
+        "Nose", "Right_eye", "Left_eye", "Right_ear", "Left_ear", "Neck",
+        "Right_shoulder", "Left_shoulder", "Right_elbow", "Left_elbow",
+        "Right_wrist", "Left_wrist", "Center_waist", "Left_waist", "Right_waist",
+        "Hip", "Right_hip", "Left_hip", "Right_hipline", "Left_hipline",
+        "Right_knee", "Left_knee", "Right_ankle", "Left_ankle"
+    ]
+    label_to_index = {label: idx for idx, label in enumerate(keypoint_labels)}
+
+    def get_keypoint(label):
+        idx = label_to_index.get(label)
+        if idx is not None and idx < len(keypoints):
+            return keypoints[idx]
+        return None
 
     def calculate_distance(p1, p2):
-        """Calculate the Euclidean distance between two points."""
         if p1 is not None and p2 is not None:
             return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
         return None
 
-    def get_keypoint(idx):
-        """Retrieve keypoint coordinates by index."""
-        if idx < len(keypoints):
-            return keypoints[idx]
-        return None
-
-    # Calculate distances
-    head_length = calculate_distance(
-        get_keypoint(indices["head_length"][0]), 
-        get_keypoint(indices["head_length"][1])
-    )
-
-    hip_width = calculate_distance(
-        get_keypoint(indices["hip_width"][0]), 
-        get_keypoint(indices["hip_width"][1])
-    )
-
-    waist_width = calculate_distance(
-        get_keypoint(indices["waist_width"][0]), 
-        get_keypoint(indices["waist_width"][1])
-    )
-
-    # For height, calculate vertical distance (y-axis only) between Nose and the midpoint of both knees
-    height = None
-    if all(get_keypoint(idx) is not None for idx in indices["height"]):
-        nose_y = get_keypoint(indices["height"][0])[1]
-        knees_y = (get_keypoint(indices["height"][1])[1] + get_keypoint(indices["height"][2])[1]) / 2
-        height = abs(nose_y - knees_y)
-
-    # Calculate ratios
     def safe_divide(a, b):
         return a / b if a is not None and b is not None and b != 0 else None
 
+    # Calculate measurements using label-based access
+    head_length = calculate_distance(get_keypoint("Right_ear"), get_keypoint("Left_ear"))
+    hip_width = calculate_distance(get_keypoint("Right_hipline"), get_keypoint("Left_hipline"))
+    waist_width = calculate_distance(get_keypoint("Right_waist"), get_keypoint("Left_waist"))
+
+    nose = get_keypoint("Nose")
+    knee_r = get_keypoint("Right_knee")
+    knee_l = get_keypoint("Left_knee")
+
+    height = None
+    if nose is not None and knee_r is not None and knee_l is not None:
+        knees_y = (knee_r[1] + knee_l[1]) / 2
+        height = abs(nose[1] - knees_y)
+
     print("Extracted Keypoints Coordinates:")
     for i, (x, y) in enumerate(keypoints):
-        print(f"Keypoint {i}: X={x:.2f}, Y={y:.2f}")
+        print(f"Keypoint {i} ({keypoint_labels[i]}): X={x:.2f}, Y={y:.2f}")
 
     measurements = {
         "Head_Length": head_length,
@@ -590,7 +665,6 @@ def extract_keypoints_and_measurements(image_path, output_csv):
         "Waist_Height_Ratio": safe_divide(waist_width, height),
     }
 
-    # Save measurements to a CSV
     df = pd.DataFrame([measurements])
     if not os.path.exists(output_csv):
         df.to_csv(output_csv, index=False)
@@ -599,12 +673,26 @@ def extract_keypoints_and_measurements(image_path, output_csv):
         df.to_csv(output_csv, mode='a', header=False, index=False)
         print(f"Data appended to CSV file: {output_csv}")
 
-    # Save keypoint visualization
     output_folder = os.path.dirname(output_csv)
     keypoint_image_path = os.path.join(output_folder, f"keypoints_{os.path.basename(image_path)}")
     results[0].save(keypoint_image_path)
 
+    # ✅ Save keypoints to JSON if path is provided
+    if output_json_path:
+        keypoints_list = keypoints.tolist()
+        keypoint_data = {
+            "image_name": os.path.basename(image_path),
+            "keypoints": {
+                keypoint_labels[i]: {"x": float(x), "y": float(y)} for i, (x, y) in enumerate(keypoints_list)
+            }
+        }
+        with open(output_json_path, "w") as f:
+            json.dump(keypoint_data, f, indent=2)
+        print(f"Keypoints saved to: {output_json_path}")
+
     return measurements, keypoint_image_path
+
+
 
 def process_depth(image_path):
     """깊이 이미지 생성"""
@@ -627,6 +715,8 @@ def process_sam(image_path):
     masks = mask_generator.generate(image_array)
 
     mask_paths = []
+    mask_to_original_map = {}
+
     for idx, mask in enumerate(masks):
         mask_image = Image.fromarray(mask["segmentation"].astype(np.uint8) * 255)
         mask_filename = f"mask_{os.path.splitext(os.path.basename(image_path))[0]}_{idx}.png"
@@ -634,10 +724,15 @@ def process_sam(image_path):
         mask_image.save(mask_path)
         mask_paths.append(f"outputs/{mask_filename}")
 
-    return mask_paths
- 
+        # ✅ 매핑 저장 (딕셔너리 형태로)
+        mask_to_original_map[mask_filename] = os.path.basename(image_path)
 
-import pandas as pd
+    # ✅ JSON 파일로 저장
+    mask_map_path = os.path.join(OUTPUT_FOLDER, "mask_to_original.json")
+    with open(mask_map_path, "w") as f:
+        json.dump(mask_to_original_map, f, indent=2)
+
+    return mask_paths
 
  
 
