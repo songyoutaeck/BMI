@@ -149,43 +149,43 @@ def process_image():
     total_sam_time = 0
     total_processes = 0
 
-    # 여러번 반복하여 평균을 구할 수 있는 예시
-    num_iterations = 5  # 예를 들어 5번의 반복을 통해 평균을 구한다고 가정
+    # # 여러번 반복하여 평균을 구할 수 있는 예시
+    # num_iterations = 5  # 예를 들어 5번의 반복을 통해 평균을 구한다고 가정
 
-    for _ in range(num_iterations):
-        # 크롭 처리 시간
-        cropped_start_time = time.time()
-        cropped_path = crop_person(input_path)
-        cropped_duration = time.time() - cropped_start_time
-        total_cropped_time += cropped_duration
+    # for _ in range(num_iterations):
+    #     # 크롭 처리 시간
+    #     cropped_start_time = time.time()
+    #     cropped_path = crop_person(input_path)
+    #     cropped_duration = time.time() - cropped_start_time
+    #     total_cropped_time += cropped_duration
 
-        # Depth 처리 시간
-        depth_start_time = time.time()
-        depth_path = process_depth(cropped_path)
-        depth_duration = time.time() - depth_start_time
-        total_depth_time += depth_duration
+    #     # Depth 처리 시간
+    #     depth_start_time = time.time()
+    #     depth_path = process_depth(cropped_path)
+    #     depth_duration = time.time() - depth_start_time
+    #     total_depth_time += depth_duration
 
-        # SAM 처리 시간
-        sam_start_time = time.time()
-        mask_paths = process_sam(depth_path)
-        sam_duration = time.time() - sam_start_time
-        total_sam_time += sam_duration
+    #     # SAM 처리 시간
+    #     sam_start_time = time.time()
+    #     mask_paths = process_sam(depth_path)
+    #     sam_duration = time.time() - sam_start_time
+    #     total_sam_time += sam_duration
 
-        total_processes += 1
+    #     total_processes += 1
 
-    # 평균 응답 시간 계산
-    average_cropped_time = total_cropped_time / total_processes
-    average_depth_time = total_depth_time / total_processes
-    average_sam_time = total_sam_time / total_processes
+    # # 평균 응답 시간 계산
+    # average_cropped_time = total_cropped_time / total_processes
+    # average_depth_time = total_depth_time / total_processes
+    # average_sam_time = total_sam_time / total_processes
 
-    # 전체 평균 처리 시간 계산
-    total_time = total_cropped_time + total_depth_time + total_sam_time
-    average_total_time = total_time / total_processes
+    # # 전체 평균 처리 시간 계산
+    # total_time = total_cropped_time + total_depth_time + total_sam_time
+    # average_total_time = total_time / total_processes
 
-    print(f"Average Cropped Duration: {average_cropped_time:.4f} seconds")
-    print(f"Average Depth Duration: {average_depth_time:.4f} seconds")
-    print(f"Average SAM Duration: {average_sam_time:.4f} seconds")
-    print(f"Average Total Duration: {average_total_time:.4f} seconds")
+    # print(f"Average Cropped Duration: {average_cropped_time:.4f} seconds")
+    # print(f"Average Depth Duration: {average_depth_time:.4f} seconds")
+    # print(f"Average SAM Duration: {average_sam_time:.4f} seconds")
+    # print(f"Average Total Duration: {average_total_time:.4f} seconds")
 
     # HTML 결과 렌더링
     return render_template(
@@ -536,6 +536,8 @@ def predict_bmi():
         bmi_status = "overweight"
     else:
         bmi_status = "fat"
+
+
 
     bmi_duration = time.time() - start_time
     print(f"BMI Prediction Duration: {bmi_duration:.4f} seconds")

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Prediction Results</title>
+    <style>
+        body {
+            font-family: 'Verdana', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f5f9;
+            color: #444;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #eac1ee;
+            color: white;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.6rem;
+            margin: 0;
+            font-weight: 600;
+            font-family: 'Arial', sans-serif;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 3rem auto;
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid #efccf8;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: #4a4a4a;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: bold;
+        }
+
+        .bmi-container {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(90deg, #4da3ff, #85e085, #f7b731, #ff4d4d);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .bmi-bar {
+            text-align: center;
+            font-weight: bold;
+            line-height: 60px;
+            color: white;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .underweight { width: 25%; background-color: #4da3ff; }
+        .normal { width: 35%; background-color: #85e085; }
+        .overweight { width: 25%; background-color: #f7b731; }
+        .obese { width: 15%; background-color: #ff4d4d; }
+
+        .bmi-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 25px;
+            background-color: #ffdf5b;
+            border-radius: 50%;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            color: #333;
+            text-align: center;
+            font-weight: bold;
+            line-height: 25px;
+        }
+
+        .measurements ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-evenly;
+            list-style: none;
+            padding: 0;
+        }
+
+        .measurements li {
+            background: #FFF8F0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            flex: 1 1 250px;
+            text-align: center;
+            font-size: 1rem;
+            border: 2px solid #f5adf5;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .measurements li span {
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .btn-container p {
+            font-size: 1.6rem;
+            color: #333;
+            margin-bottom: 1.2rem;
+            font-weight: 500;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00bcd4, #ff4081);
+            color: white;
+            padding: 14px 40px;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(45deg, #ff4081, #00bcd4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: auto;
+            padding: 1.5rem;
+            background: #f0cbeb;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>BMI Prediction Results</h1>
+</header>
+
+<main>
+    <section>
+        <h2>Prediction Results</h2>
+        <ul class="prediction-results">
+            <li style="font-size: 38px;">BMI Score: <span>{{ ensemble_pred|round(2) }}</span></li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>BMI Classification</h2>
+        <div class="bmi-container">
+            <div class="bmi-bar underweight">Low Weight</div>
+            <div class="bmi-bar normal">Normal</div>
+            <div class="bmi-bar overweight">Overweight</div>
+            <div class="bmi-bar obese">Obese</div>
+
+            <div class="bmi-pointer" style="left: {{ pointer_position }}%;">
+                <span>{{ ensemble_pred|round(2) }}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="measurements">
+        <h2>Body Measurements</h2>
+        <ul>
+            <li>Head Length: <span>{{ measurements.Head_Length|round(2) if measurements.Head_Length else 'N/A' }}</span></li>
+            <li>Hip Width: <span>{{ measurements.Hip_Width|round(2) if measurements.Hip_Width else 'N/A' }}</span></li>
+            <li>Waist Width: <span>{{ measurements.Waist_Width|round(2) if measurements.Waist_Width else 'N/A' }}</span></li>
+            <li>Height: <span>{{ measurements.Height|round(2) if measurements.Height else 'N/A' }}</span></li>
+            <li>Head-Hip Ratio: <span>{{ measurements.Head_Hip_Ratio|round(2) if measurements.Head_Hip_Ratio else 'N/A' }}</span></li>
+            <li>Head-Waist Ratio: <span>{{ measurements.Head_Waist_Ratio|round(2) if measurements.Head_Waist_Ratio else 'N/A' }}</span></li>
+            <li>Head-Height Ratio: <span>{{ measurements.Head_Height_Ratio|round(2) if measurements.Head_Height_Ratio else 'N/A' }}</span></li>
+            <li>Hip-Waist Ratio: <span>{{ measurements.Hip_Waist_Ratio|round(2) if measurements.Hip_Waist_Ratio else 'N/A' }}</span></li>
+            <li>Hip-Height Ratio: <span>{{ measurements.Hip_Height_Ratio|round(2) if measurements.Hip_Height_Ratio else 'N/A' }}</span></li>
+            <li>Waist-Height Ratio: <span>{{ measurements.Waist_Height_Ratio|round(2) if measurements.Waist_Height_Ratio else 'N/A' }}</span></li>  
+            <li>HGB: <span>{{ hgb_pred|round(2) }}</span></li>
+            <li>LightGBM: <span>{{ lgbm_pred|round(2) }}</span></li>
+            <li>CatBoost: <span>{{ catboost_pred|round(2) }}</span></li>
+        </ul>
+    </section>
+
+    <div class="btn-container">
+        <p>Discover recommendations based on your BMI status!</p>
+        {% if bmi_status == "low" %}
+            <a href="{{ url_for('low_weight') }}" class="btn">🖱️Food & Exercise for Low Weight</a>
+        {% elif bmi_status == "normal" %}
+            <a href="{{ url_for('normal') }}" class="btn">🖱️Food & Exercise for Normal</a>
+        {% elif bmi_status == "overweight" %}
+            <a href="{{ url_for('overweight') }}" class="btn">🖱️Food & Exercise for Overweight</a>
+        {% else %}
+            <a href="{{ url_for('fat') }}" class="btn">🖱️Food & Exercise for Obese</a>
+        {% endif %}
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2025 SBL Lab. All Rights Reserved.</p>
+</footer>
+
+</body>
+</html>

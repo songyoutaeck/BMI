@@ -5,20 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Processing Results</title>
     <style> 
-
         /* Header styles */
         body {
             line-height: 1.6;
             margin: 0;
             padding: 0;
-            background-color: #FFFBEA; /* 메모지 느낌의 밝은 크림색 배경 */
+            background-color: #f8edeb; /* 메모지 느낌의 밝은 크림색 배경 */
             color: #333;
             font-family: 'GangwonEdu_OTFBoldA', sans-serif;
         }
 
         header {
-            background-color: #FFABAB; /* 밝은 분홍색 */
-            color: white;
+            background-color: #ffabab; /* 밝은 분홍색 */
+            color: rgb(20, 10, 10);
             padding: 1.5rem 0;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -145,10 +144,6 @@
  
         <!-- Keypoint and Depth Image Sections (Side by Side) -->
         <div class="flex-container">
-            <div class="section">
-                <h2>Cropped Image (YOLO)</h2>
-                <img src="{{ url_for('static', filename=cropped_image) }}" style="  width: 300px; height: auto;" alt="Cropped Image">
-            </div>
             <div class="section">
                 <h2>Keypoint Visualization</h2>
                 <img src="{{ url_for('static', filename=keypoint_image) }}" style="  width: 300px; height: auto;" alt="Keypoint Visualization">

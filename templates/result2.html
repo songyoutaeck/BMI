@@ -4,25 +4,193 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Processing Results</title>
+    <style> 
+/* 전체 폰트 및 배경 설정 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+
+body {
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f7fa;
+    color: #1a1a1a;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 헤더 */
+header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 2rem 0;
+    text-align: center;
+    border-bottom: 5px solid #3498db;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.8rem;
+}
+
+/* 메인 섹션 */
+main {
+    max-width: 1200px;
+    margin: 2rem auto;
+    background: #ffffff;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 제목 */
+h2 {
+    color: #2c3e50;
+    font-size: 1.6rem;
+    text-align: center;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+/* 이미지 공통 스타일 */
+img {
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1rem;
+}
+
+/* Keypoint & Depth 이미지 영역 */
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.flex-container .section {
+    flex: 1;
+    text-align: center;
+}
+
+/* 마스크 선택 영역 */
+.masks-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.masks-container img {
+    width: 160px;
+    height: auto;
+    border: 2px solid #ecf0f1;
+    border-radius: 8px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.masks-container img:hover {
+    transform: scale(1.07);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 측정값 리스트 */
+.measurements ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.measurements ul li {
+    background: #f8f9fa;
+    padding: 1rem 1.2rem;
+    border: 1px solid #dcdde1;
+    border-radius: 8px;
+    flex: 1 1 calc(30% - 1rem);
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.measurements ul li span {
+    font-weight: bold;
+    color: #2980b9;
+}
+    </style>
 </head>
 <body>
-    <h1>Processing Results</h1>
-
-    <h2>Cropped Image</h2>
-    <img src="{{ cropped_image }}" alt="Cropped Image" style="max-width: 500px;">
-
-    <h2>Depth Image</h2>
-    <img src="{{ depth_image }}" alt="Depth Image" style="max-width: 500px;">
-
-    <h2>Generated Masks</h2>
-    <form action="/select_masks" method="post">
-        {% for mask in masks %}
-            <div>
-                <input type="checkbox" name="selected_masks" value="{{ mask }}">
-                <img src="{{ mask }}" alt="Mask" style="max-width: 200px;">
+    <header>
+        <h1>Processing Results</h1>
+    </header>
+    <main>
+ 
+        <!-- Keypoint and Depth Image Sections (Side by Side) -->
+        <div class="flex-container"> 
+            <div class="section">
+                <h2>Keypoint Visualization</h2>
+                <img src="{{ url_for('static', filename=keypoint_image) }}" style="  width: 300px; height: auto;" alt="Keypoint Visualization">
             </div>
-        {% endfor %}
-        <button type="submit">Submit Selected Masks</button>
-    </form>
+            <div class="section">
+                <h2>Depth Image</h2>
+                <img src="{{ url_for('static', filename=depth_image) }}" style="  width: 300px; height: auto;" alt="Depth Image">
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 style="text-align: center;">SAM Masks</h2> <p style="text-align: center; font-family: 'GangwonEdu_OTFBoldA'; font-size: larger; " >"Please select the most correct option from the images below."</p> 
+            <form action="/select_masks" method="post" id="maskForm">
+                <div class="masks-container">
+                    {% for mask in masks %}
+                        <div class="mask-item">
+                            <!-- 이미지 클릭 시 폼이 자동 제출되도록 함 -->
+                            <a href="javascript:void(0);" onclick="submitForm('{{ mask }}');">
+                                <img src="{{ url_for('static', filename=mask) }}" alt="SAM Mask" style="width: 150px; height: auto;">
+                            </a>
+                            <!-- 숨겨진 checkbox로 마스크 선택 -->
+                            <input type="checkbox" name="selected_masks" value="{{ mask }}" style="display: none;">
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+        
+        <script>
+            // 이미지를 클릭하면 폼을 자동으로 제출하는 함수
+            function submitForm(mask) {
+                // 해당 mask에 대한 checkbox를 찾아서 체크하기
+                const checkbox = document.querySelector(`input[name="selected_masks"][value="${mask}"]`);
+                checkbox.checked = true; // 체크박스 선택
+        
+                // 폼 자동 제출
+                document.getElementById("maskForm").submit();
+            }
+        </script>
+        
+        
+        
+
+        <!-- Measurements Section -->
+        <div class="section measurements">
+            <h2>Body Measurements</h2>
+            <ul>
+                <li>Head Length: <span>{{ measurements.Head_Length|round(2) }}</span></li>
+                <li>Hip Width: <span>{{ measurements.Hip_Width|round(2) }}</span></li>
+                <li>Waist Width: <span>{{ measurements.Waist_Width|round(2) }}</span></li>
+                <li>Height: <span>{{ measurements.Height|round(2) }}</span></li>
+                <li>Head-Hip Ratio: <span>{{ measurements.Head_Hip_Ratio|round(2) if measurements.Head_Hip_Ratio else 'N/A' }}</span></li>
+                <li>Head-Waist Ratio: <span>{{ measurements.Head_Waist_Ratio|round(2) if measurements.Head_Waist_Ratio else 'N/A' }}</span></li>
+                <li>Head-Height Ratio: <span>{{ measurements.Head_Height_Ratio|round(2) if measurements.Head_Height_Ratio else 'N/A' }}</span></li>
+                <li>Hip-Waist Ratio: <span>{{ measurements.Hip_Waist_Ratio|round(2) if measurements.Hip_Waist_Ratio else 'N/A' }}</span></li>
+                <li>Hip-Height Ratio: <span>{{ measurements.Hip_Height_Ratio|round(2) if measurements.Hip_Height_Ratio else 'N/A' }}</span></li>
+                <li>Waist-Height Ratio: <span>{{ measurements.Waist_Height_Ratio|round(2) if measurements.Waist_Height_Ratio else 'N/A' }}</span></li>
+            </ul>
+        </div>
+
+        
+    </main>
 </body>
 </html>
